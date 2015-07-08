@@ -118,6 +118,12 @@ public:
 		cout << endl;
 	}
 
+	/*deck(vector<card> tempDeck){
+		for (int i = 0; i < tempDeck; i++){
+			tempDeck[i]
+		}
+	}*/
+
 };
 
 bool to_bool(std::string str) {

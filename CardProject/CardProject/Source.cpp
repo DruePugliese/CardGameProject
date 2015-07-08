@@ -8,11 +8,13 @@ int main() {
 
 	srand (time(NULL));
 
-	deck(30);
+	//deck(3.0).displayDeck();
 
-	deck(3.0).displayDeck();
+	
 
 
+
+	//creates a deck of 10 cards with 0 attack and 1 health
 	/*card card1 = card(0, 1, false);
 
 	for (int i = 0; i < 10; i++){
@@ -28,7 +30,7 @@ int main() {
 
 		
 
-	/*//random list in order to test deck constructor
+	//random list in order to test new deck constructor
 	card deckOfCards[30];
 
 	for (int i = 0; i < 13; i++){
@@ -46,7 +48,7 @@ int main() {
 
 	//shuffle(deckOfCards, 52);
 
-	card player1Hand[5];
+	/*card player1Hand[5];
 	card player2Hand[5];
 
 	int topCard = 0;

@@ -32,7 +32,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 					LPSTR lpCmdLine, 
 					int nCmdShow){
 	// load our image
-	loadImage("C:\\Users\\student\\Documents\\Visual Studio 2013\\Projects\\visualCardProject\\visualCardProject\\Images\\test.bmp");
+	loadImage("C:\\Users\\student\\Documents\\GitHub\\CardGameProject\\visualCardProject\\visualCardProject\\Images\\test.bmp");
 
 	// create our window
 	HWND wnd = createWindow(hInstance);
