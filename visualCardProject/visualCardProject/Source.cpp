@@ -1,10 +1,12 @@
-#include <Windows.h>
-#include <stdlib.h>
-#include <string.h>
-#include <tchar.h>
+#include "displayManager.h"
+#include "deck.h"
+
 
 //Global Vars
 
+
+
+/*
 HDC         imageDC;        // the DC to hold our image
 HBITMAP     imageBmp;       // the actual bitmap which contains the image (will be put in the DC)
 HBITMAP     imageBmpOld;    // the DC's old bitmap (for cleanup)
@@ -25,22 +27,36 @@ LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 void loadImage(const char* pathname);
 void cleanUpImage();
 void drawImage(HDC screen);
-HWND createWindow(HINSTANCE inst);
+HWND createWindow(HINSTANCE inst);*/
 
 int WINAPI WinMain(HINSTANCE hInstance, 
 					HINSTANCE hPrevInstance, 
 					LPSTR lpCmdLine, 
 					int nCmdShow){
-	// load our image
-	loadImage("C:\\Users\\student\\Documents\\GitHub\\CardGameProject\\visualCardProject\\visualCardProject\\Images\\test.bmp");
+
+	vector<card> deckOfCards;
+
+	srand(time(NULL));
+
+	for (int i = 0; i < 30;i++){
+		card card1 = card();
+		card1.setAttack(rand() % 10);
+		card1.setHealth(rand() % 15);
+		card1.setSpell(false);
+		deckOfCards.push_back(card1);
+	}
+
+	deck(3.0, deckOfCards, "stuff");
+
+
 
 	// create our window
-	HWND wnd = createWindow(hInstance);
+	displayManager().createWindow(hInstance);
 
 	// Do the message pump!  keep polling for messages (and respond to them)
 	//  until the user closes the window.
 	MSG msg;
-	while (GetMessage(&msg, NULL, 0, 0)) // while we are getting non-WM_QUIT messages...
+	while (GetMessage(&msg, 0, 0, 0)) // while we are getting non-WM_QUIT messages...
 	{
 		TranslateMessage(&msg);     // translate them
 		DispatchMessage(&msg);      // and dispatch them (our wndProc will process them)
@@ -52,7 +68,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
 
 
-/////////////////////////////////////////////
+/*////////////////////////////////////////////
 /////////////////////////////////////////////
 /////////////////////////////////////////////
 // Function to load the image into our DC so we can draw it to the screen
@@ -148,7 +164,7 @@ HWND createWindow(HINSTANCE inst)
 	RegisterClassEx(&wc);           // register our window class with Windows
 
 	// the style of the window we want... we want a normal window but do not want it resizable.
-	int style = WS_OVERLAPPED | /*WS_MINIMIZEBOX | WS_MAXIMIZEBOX*/ WS_CAPTION | WS_SYSMENU;    // normal overlapped window with a caption and a system menu (the X to close)
+	int style = WS_OVERLAPPED WS_CAPTION | WS_SYSMENU;    // normal overlapped window with a caption and a system menu (the X to close)
 
 	// Figure out how big we need to make the window so that the CLIENT area (the part we will be drawing to) is
 	//  the desired size
@@ -166,4 +182,4 @@ HWND createWindow(HINSTANCE inst)
 		inst,                       // our program instance
 		NULL);                      // no extra parameter
 
-}
+}*/

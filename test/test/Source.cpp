@@ -1,143 +1,145 @@
-// GT_HelloWorldWin32.cpp
-// compile with: /D_UNICODE /DUNICODE /DWIN32 /D_WINDOWS /c
+#include <Windows.h>
 
-#include <windows.h>
-#include <stdlib.h>
-#include <string.h>
-#include <tchar.h>
+///////////////////////////////
+///////////////////////////////
+// I hate globals, but to keep this simple, we'll have our image stuff be global
+HDC         imageDC;        // the DC to hold our image
+HBITMAP     imageBmp;       // the actual bitmap which contains the image (will be put in the DC)
+HBITMAP     imageBmpOld;    // the DC's old bitmap (for cleanup)
 
-// Global variables
+const int   screenSize_X = 640;
+const int   screenSize_Y = 480;
 
-// The main window class name.
-static TCHAR szWindowClass[] = _T("win32app");
-
-// The string that appears in the application's title bar.
-static TCHAR szTitle[] = _T("Win32 Guided Tour Application");
-
-HINSTANCE hInst;
-
-// Forward declarations of functions included in this code module:
-LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-
-int WINAPI WinMain(HINSTANCE hInstance,
-	HINSTANCE hPrevInstance,
-	LPSTR lpCmdLine,
-	int nCmdShow)
+///////////////////////////////
+///////////////////////////////
+// Function to load the image into our DC so we can draw it to the screen
+void loadImage(const char* pathname)
 {
-	WNDCLASSEX wcex;
+	imageDC = CreateCompatibleDC(NULL);     // create an offscreen DC
 
-	wcex.cbSize = sizeof(WNDCLASSEX);
-	wcex.style = CS_HREDRAW | CS_VREDRAW;
-	wcex.lpfnWndProc = WndProc;
-	wcex.cbClsExtra = 0;
-	wcex.cbWndExtra = 0;
-	wcex.hInstance = hInstance;
-	wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_APPLICATION));
-	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
-	wcex.lpszMenuName = NULL;
-	wcex.lpszClassName = szWindowClass;
-	wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_APPLICATION));
-
-	if (!RegisterClassEx(&wcex))
-	{
-		MessageBox(NULL,
-			_T("Call to RegisterClassEx failed!"),
-			_T("Win32 Guided Tour"),
-			NULL);
-
-		return 1;
-	}
-
-	hInst = hInstance; // Store instance handle in our global variable
-
-	// The parameters to CreateWindow explained:
-	// szWindowClass: the name of the application
-	// szTitle: the text that appears in the title bar
-	// WS_OVERLAPPEDWINDOW: the type of window to create
-	// CW_USEDEFAULT, CW_USEDEFAULT: initial position (x, y)
-	// 500, 100: initial size (width, length)
-	// NULL: the parent of this window
-	// NULL: this application does not have a menu bar
-	// hInstance: the first parameter from WinMain
-	// NULL: not used in this application
-	HWND hWnd = CreateWindow(
-		szWindowClass,
-		szTitle,
-		WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, CW_USEDEFAULT,
-		500, 100,
-		NULL,
-		NULL,
-		hInstance,
-		NULL
+	imageBmp = (HBITMAP)LoadImageA(         // load the bitmap from a file
+		NULL,                           // not loading from a module, so this is NULL
+		pathname,                       // the path we're loading from
+		IMAGE_BITMAP,                   // we are loading a bitmap
+		0, 0,                            // don't need to specify width/height
+		LR_DEFAULTSIZE | LR_LOADFROMFILE// use the default bitmap size (whatever the file is), and load it from a file
 		);
 
-	if (!hWnd)
-	{
-		MessageBox(NULL,
-			_T("Call to CreateWindow failed!"),
-			_T("Win32 Guided Tour"),
-			NULL);
-
-		return 1;
-	}
-
-	// The parameters to ShowWindow explained:
-	// hWnd: the value returned from CreateWindow
-	// nCmdShow: the fourth parameter from WinMain
-	ShowWindow(hWnd,
-		nCmdShow);
-	UpdateWindow(hWnd);
-
-	// Main message loop:
-	MSG msg;
-	while (GetMessage(&msg, NULL, 0, 0))
-	{
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-	}
-
-	return (int)msg.wParam;
+	imageBmpOld = (HBITMAP)SelectObject(imageDC, imageBmp);  // put the loaded image into our DC
 }
 
-//
-//  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
-//
-//  PURPOSE:  Processes messages for the main window.
-//
-//  WM_PAINT    - Paint the main window
-//  WM_DESTROY  - post a quit message and return
-//
-//
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+
+///////////////////////////////
+// Function to clean up
+void cleanUpImage()
 {
-	PAINTSTRUCT ps;
-	HDC hdc;
-	TCHAR greeting[] = _T("Hello, World!");
+	SelectObject(imageDC, imageBmpOld);      // put the old bmp back in our DC
+	DeleteObject(imageBmp);                 // delete the bmp we loaded
+	DeleteDC(imageDC);                      // delete the DC we created
+}
 
-	switch (message)
+///////////////////////////////
+///////////////////////////////
+// The function to draw our image to the display (the given DC is the screen DC)
+void drawImage(HDC screen)
+{
+	BitBlt(
+		screen,         // tell it we want to draw to the screen
+		0, 0,            // as position 0,0 (upper-left corner)
+		screenSize_X,   // width of the rect to draw
+		screenSize_Y,   // height of the rect
+		imageDC,        // the DC to get the rect from (our image DC)
+		0, 0,            // take it from position 0,0 in the image DC
+		SRCCOPY         // tell it to do a pixel-by-pixel copy
+		);
+}
+
+
+///////////////////////////////
+///////////////////////////////
+// A callback to handle Windows messages as they happen
+LRESULT CALLBACK wndProc(HWND wnd, UINT msg, WPARAM w, LPARAM l)
+{
+	// what kind of message is this?
+	switch (msg)
 	{
+		// we are interested in WM_PAINT, as that is how we draw
 	case WM_PAINT:
-		hdc = BeginPaint(hWnd, &ps);
+	{
+		PAINTSTRUCT ps;
+		HDC screen = BeginPaint(wnd, &ps);   // Get the screen DC
+		drawImage(screen);                  // draw our image to our screen DC
+		EndPaint(wnd, &ps);                  // clean up
+	}break;
 
-		// Here your application is laid out.
-		// For this introduction, we just print out "Hello, World!"
-		// in the top left corner.
-		TextOut(hdc,
-			5, 5,
-			greeting, _tcslen(greeting));
-		// End application-specific layout section.
-
-		EndPaint(hWnd, &ps);
-		break;
+	// we are also interested in the WM_DESTROY message, as that lets us know when to close the window
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
-	default:
-		return DefWindowProc(hWnd, message, wParam, lParam);
-		break;
 	}
 
-	return 0;
+	// for everything else, let the default window message handler do its thing
+	return DefWindowProc(wnd, msg, w, l);
+}
+
+
+///////////////////////////////
+///////////////////////////////
+// A function to create the window and get it set up
+HWND createWindow(HINSTANCE inst)
+{
+	WNDCLASSEX wc = { 0 };        // create a WNDCLASSEX struct and zero it
+	wc.cbSize = sizeof(WNDCLASSEX);     // tell windows the size of this struct
+	wc.hCursor = LoadCursor(NULL, MAKEINTRESOURCE(IDC_ARROW));        // tell it to use the normal arrow cursor for this window
+	wc.hInstance = inst;                   // give it our program instance
+	wc.lpfnWndProc = wndProc;                // tell it to use our wndProc function to handle messages
+	wc.lpszClassName = TEXT("DisplayImage");   // give this window class a name.
+
+	RegisterClassEx(&wc);           // register our window class with Windows
+
+	// the style of the window we want... we want a normal window but do not want it resizable.
+	int style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU;    // normal overlapped window with a caption and a system menu (the X to close)
+
+	// Figure out how big we need to make the window so that the CLIENT area (the part we will be drawing to) is
+	//  the desired size
+	RECT rc = { 0, 0, screenSize_X, screenSize_Y };      // desired rect
+	AdjustWindowRect(&rc, style, FALSE);              // adjust the rect with the given style, FALSE because there is no menu
+
+	return CreateWindow(            // create the window
+		TEXT("DisplayImage"),       // the name of the window class to use for this window (the one we just registered)
+		TEXT("Display an Image"),   // the text to appear on the title of the window
+		style | WS_VISIBLE,         // the style of this window (OR it with WS_VISIBLE so it actually becomes visible immediately)
+		100, 100,                    // create it at position 100,100
+		rc.right - rc.left,         // width of the window we want
+		rc.bottom - rc.top,         // height of the window
+		NULL, NULL,                  // no parent window, no menu
+		inst,                       // our program instance
+		NULL);                      // no extra parameter
+
+}
+
+
+///////////////////////////////
+///////////////////////////////
+// The actual entry point for the program!
+//  This is Windows' version of the 'main' function:
+int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmd, int show)
+{
+	// load our image
+	loadImage("C:\\Users\\student\\Documents\\GitHub\\CardGameProject\\visualCardProject\\visualCardProject\\Images\\test.bmp");
+
+	// create our window
+	HWND wnd = createWindow(inst);
+
+	// Do the message pump!  keep polling for messages (and respond to them)
+	//  until the user closes the window.
+	MSG msg;
+	while (GetMessage(&msg, wnd, 0, 0)) // while we are getting non-WM_QUIT messages...
+	{
+		TranslateMessage(&msg);     // translate them
+		DispatchMessage(&msg);      // and dispatch them (our wndProc will process them)
+	}
+
+	// once the user quits....
+	cleanUpImage();
 }
