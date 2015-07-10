@@ -63,7 +63,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	}
 
 	// once the user quits....
-	cleanUpImage();
+	displayManager().cleanUpImage();
 }
 
 
